@@ -1,0 +1,28 @@
+{
+  "name": "kiper",
+  "version": "0.0.1",
+  "description": "Keep objects available everywhere in nodejs application",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/start.js | tap-spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vunb/kiper.git"
+  },
+  "keywords": [
+    "key-value-store",
+    "map",
+    "nodejs"
+  ],
+  "author": "Vunb",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vunb/kiper/issues"
+  },
+  "homepage": "https://github.com/vunb/kiper#readme",
+  "devDependencies": {
+    "tap-spec": "^4.1.1",
+    "tape": "^4.6.0"
+  }
+}
