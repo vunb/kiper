@@ -10,10 +10,18 @@ class Kiper extends Map {
 
     /**
      * Get an object from kiper
-     * @param {string} key 
+     * @param {string} key a key holder or validator function
      */
     get(key) {
-        return super.get(key);
+        if (typeof key === 'function') {
+            for (var [name, value] of this.entries()) {
+                if (key(value, name)) {
+                    return value;   
+                }
+            }
+        } else {
+            return super.get(key);
+        }
     }
 
     /**

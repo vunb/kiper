@@ -25,3 +25,10 @@ test('Should throw an exception', function (t) {
 
     t.throws(() => kiper.set('__kiper__'), /TypeError/, 'Should throw typeError');
 });
+
+test('Should return the first value in the kiper that satisfies', function (t) {
+    t.plan(1);
+
+    let asset = kiper.get((value, key) => value === 'bar');
+    t.equal(asset, 'bar');
+});
