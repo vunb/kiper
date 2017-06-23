@@ -54,6 +54,35 @@ test('Should emit an event expired on key', (t) => {
     })
 });
 
+test('Observe an object and notify on value of the item is changed', (t) => {
+    t.plan(5);
+
+    // check 2 times
+    t.throws(() => kiper._observe(123, console.log), /TypeError/, 'Should throw typeError if not pass an object');
+    t.throws(() => kiper._observe({}), /function/,'Should throw an error if missing a callback');
+
+    // keep an asset
+    kiper.keep('baz', {
+        gold: 1000
+    });
+
+    let baz = kiper.watch('baz', (obj, oldVal, prop, type) => {
+        if (type === 'update') {
+            t.equal(obj[prop] - oldVal, -1, 'lost one gold!');
+        } else if (type === 'add') {
+            t.equal(obj['silver'], 1000, 'new prop should be added');
+        } else if (type === 'delete') {
+            t.notOk(obj['baz'], 'baz should be undefined after delete');
+        }
+    });
+
+    // change value in somewhere
+    // check 3 times
+    setTimeout(() => baz.gold = 999, 1000);
+    setTimeout(() => delete baz.gold, 1000);
+    setTimeout(() => baz.silver = 1000, 1000);
+});
+
 test('Kiper retire', (t) => {
     // stop testing
     kiper.retire();

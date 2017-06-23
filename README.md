@@ -106,6 +106,24 @@ Method: `.touch(key)`
 kiper.touch('foo');
 ```
 
+Method: `.watch(key, callback)`
+-------------------------------
+
+> Watch a key, if its value changes then a callback will be called
+> Added in: `v0.1.1`  
+
+```js
+// keep an asset
+kiper.keep('baz', {
+    gold: 1000
+});
+
+// watch a key and return an obserable object 
+let baz = kiper.watch('baz', (obj, oldVal, prop, type) => {
+    console.log('change info:', obj, oldVal, prop, type);
+});
+```
+
 License
 =======
 
