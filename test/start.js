@@ -6,7 +6,7 @@ test('Keep a simple value', (t) => {
     t.plan(2);
 
     // kiper collects some items
-    kiper.set('foo', 'bar');
+    kiper.keep('foo', 'bar');
     kiper.set('baz', {
         gold: 1000
     });

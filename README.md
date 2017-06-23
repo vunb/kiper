@@ -35,6 +35,7 @@ Method: `.keep(key: string, value: object)`
 
 > Keep an object in kiper  
 > Added in: `v0.0.1`  
+> Alias: `set`
 
 ```js
 kiper.keep('foo', 'bar');
@@ -45,6 +46,7 @@ Method: `.keep(key: string, value: object, ttl: int, timeout: function)`
 
 > Keep an object for a period of time  
 > Added in: `v0.1.0`  
+> Alias: `set`
 
 ```js
 kiper.keep('foo', 'bar', 1000, console.log);
@@ -92,6 +94,16 @@ Method: `.retire()`
 
 ```js
 kiper.retire();
+```
+
+Method: `.touch(key)`
+-------------------------------
+
+> Repair the last time usage  
+> Added in: `v0.1.1`  
+
+```js
+kiper.touch('foo');
 ```
 
 License

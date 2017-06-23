@@ -21,6 +21,9 @@ class Kiper extends events {
         // override default
         this.options = Object.assign(this.options, options);
 
+        // bind has method into kiper
+        this.has = this._store.has.bind(this._store);
+
         if (this.options.checkPeriod > 0) {
             this._timer = setInterval(() => {
                 for (let [name, obj] of this._helper) {
@@ -40,7 +43,6 @@ class Kiper extends events {
 
         if (obj.ttl > 0 && Date.now() - lastTime > obj.ttl) {
             let value = this.remove(obj.key);
-            this._helper.delete(obj.key);
             this.emit('expired', value, obj.key, obj);
             obj.cb(value, obj.key, obj);
         }
@@ -52,13 +54,19 @@ class Kiper extends events {
      */
     get(key) {
         if (typeof key === 'function') {
-            for (let [name, value] of this._store.entries()) {
-                if (key(value, name)) {
-                    return value;   
+            for (let [name, value] of this._store) {
+                let rawValue = value['$isWrapped'] ? value[name] : value;
+                if (key(rawValue, name)) {
+                    this.touch(name);
+                    return rawValue;
                 }
             }
+        } else if (this.has(key)) {
+            this.touch(key);
+            let value = this._store.get(key);
+            return value['$isWrapped'] ? value[key] : value;
         } else {
-            return this._store.get(key);
+            return undefined;
         }
     }
 
@@ -72,7 +80,7 @@ class Kiper extends events {
             throw new TypeError('Key starts with prefix: __kiper__');
         }
         // its okay
-        this._store.set(key, value);
+        this.keep.apply(this, arguments);
     }
 
     /**
@@ -81,18 +89,33 @@ class Kiper extends events {
      * @param {object} value 
      */
     keep(key, value, ttl, cb) {
-        let timeout;
-        if (!ttl) {
-            this._store.set(key, value);
-        } else if (typeof ttl === 'number' && ttl > 0) {
-            this._store.set(key, value);
-            this._helper.set(key, {
-                ttl: ttl,
-                key: key,
-                cb: cb || (() => 1),
-                lastUsage: Date.now()
-            });
-        }
+        let wrapper = (() => {
+            if (typeof value !== 'object') {
+                return {
+                    $isWrapped: true,
+                    [key]: value
+                }
+            } else {
+                return value;
+            }
+        })();
+
+        this.remove(key);
+        this._store.set(key, wrapper);
+        this._helper.set(key, {
+            ttl: ttl,
+            key: key,
+            cb: cb || (() => 1),
+            lastUsage: Date.now(),
+            proxy: new Proxy(wrapper, {
+                set(target, name, value) {
+                    let old = target[name];
+                    target[name] = value;
+                    console.log('Change: ', value, old, name);
+                    this.emit('change', value, old, name);
+                }
+            })
+        });
     }
 
     /**
@@ -100,8 +123,9 @@ class Kiper extends events {
      * @param {string} key 
      */
     remove(key) {
-        let item = this.get(key);
+        let item = this.has(key) && this.get(key);
         this._store.delete(key);
+        this._helper.delete(key);
         return item;
     }
 
@@ -112,6 +136,25 @@ class Kiper extends events {
         clearInterval(this._timer);
         this._store.clear();
         this._helper.clear();
+    }
+
+    /**
+     * Repair the last time usage
+     * @param {*} key 
+     */
+    touch(key) {
+        if (this._helper.has(key)) {
+            this._helper.get(key).lastUsage = Date.now();
+        }
+    }
+
+    /**
+     * Observe value of key
+     * @param {*} key 
+     * @param {function} cb callback when value of key is changed
+     */
+    watch(key, cb) {
+
     }
 }
 
