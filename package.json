@@ -1,6 +1,6 @@
 {
   "name": "kiper",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Keep objects available everywhere in nodejs application",
   "main": "index.js",
   "scripts": {
