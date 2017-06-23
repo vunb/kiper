@@ -43,7 +43,7 @@ kiper.keep('foo', 'bar');
 Method: `.keep(key: string, value: object, ttl: int, timeout: function)`
 -------------------------------
 
-> Keep an object for a period of time
+> Keep an object for a period of time  
 > Added in: `v0.1.0`  
 
 ```js
