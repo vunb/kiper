@@ -50,17 +50,6 @@ kiper.keep('foo', 'bar', 1000, console.log);
 // output: bar foor
 ```
 
-Method: `.remove(key: string)`
--------------------------------
-
-> Remove an object out of kiper  
-> Added in: `v0.1.0`  
-
-```js
-kiper.remove('foo');
-// returns: bar
-```
-
 Method: `.get(key: string)`
 -------------------------------
 
@@ -81,6 +70,27 @@ Method: `.get(validator: function)`
 ```js
 kiper.get((value, key) => value === 'bar');
 // returns: bar
+```
+
+Method: `.remove(key: string)`
+-------------------------------
+
+> Remove an object out of kiper  
+> Added in: `v0.1.0`  
+
+```js
+kiper.remove('foo');
+// returns: bar
+```
+
+Method: `.retire()`
+-------------------------------
+
+> Stop interval checking, free memory and release objects  
+> Added in: `v0.1.0`  
+
+```js
+kiper.retire();
 ```
 
 License

@@ -106,7 +106,7 @@ class Kiper extends events {
     }
 
     /**
-     * Stop interval, free memory
+     * Stop interval, free memory and release objects
      */
     retire() {
         clearInterval(this._timer);
