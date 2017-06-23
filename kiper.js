@@ -49,7 +49,7 @@ class Kiper extends events {
         }
     }
 
-    _observe(obj, cb) {
+    _observe(key, obj, cb) {
         if (Object(obj) !== obj) {
             throw new TypeError('target must be an Object, given ' + obj);
         }
@@ -58,9 +58,10 @@ class Kiper extends events {
             throw 'observer must be a function, given ' + cb;
         }
 
+        var self = this;
         return new Proxy(obj, {
-            set(target, key, value, receiver) {
-                let oldVal = target[key];
+            set(target, prop, value, receiver) {
+                let oldVal = target[prop];
 
                 // do not send anything if value did not change.
                 if (oldVal === value) return;
@@ -71,30 +72,33 @@ class Kiper extends events {
                 let info = {
                     object: target,
                     oldValue: oldVal,
-                    name: key,
+                    name: prop,
                     type: type,
                 };
 
+
                 // set prop value on target
-                target[key] = value;
+                target[prop] = value;
+                self.keep(key, target);
                 cb(info.object, info.oldValue, info.name, info.type);
                 // must return true, see: https://goo.gl/KuR8QW
                 return true;
             },
 
-            deleteProperty(target, key, receiver) {
-                // do not send change if key does not exist.
-                if (!(key in target)) return;
+            deleteProperty(target, prop, receiver) {
+                // do not send change if prop does not exist.
+                if (!(prop in target)) return;
 
                 let info = {
                     object: target,
-                    oldValue: target[key],
-                    name: key,
+                    oldValue: target[prop],
+                    name: prop,
                     type: 'delete'
                 };
 
                 // remove property.
-                delete target[key];
+                delete target[prop];
+                self.keep(key, target);
                 cb(info.object, info.oldValue, info.name, info.type);
                 return true;
             }
@@ -188,7 +192,7 @@ class Kiper extends events {
      */
     watch(key, cb) {
         let value = this.get(key);
-        return this._observe(value, cb);
+        return this._observe(key, value, cb);
     }
 }
 

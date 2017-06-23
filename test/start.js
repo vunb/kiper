@@ -55,11 +55,11 @@ test('Should emit an event expired on key', (t) => {
 });
 
 test('Observe an object and notify on value of the item is changed', (t) => {
-    t.plan(5);
+    t.plan(6);
 
     // check 2 times
-    t.throws(() => kiper._observe(123, console.log), /TypeError/, 'Should throw typeError if not pass an object');
-    t.throws(() => kiper._observe({}), /function/,'Should throw an error if missing a callback');
+    t.throws(() => kiper._observe('fake', 123, console.log), /TypeError/, 'Should throw typeError if not pass an object');
+    t.throws(() => kiper._observe('fake', {}), /function/,'Should throw an error if missing a callback');
 
     // keep an asset
     kiper.keep('baz', {
@@ -81,6 +81,8 @@ test('Observe an object and notify on value of the item is changed', (t) => {
     setTimeout(() => baz.gold = 999, 1000);
     setTimeout(() => delete baz.gold, 1000);
     setTimeout(() => baz.silver = 1000, 1000);
+
+    t.ok(kiper.get('baz').silver, 'baz has silver its own');
 });
 
 test('Kiper retire', (t) => {
