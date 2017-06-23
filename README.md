@@ -2,6 +2,7 @@
 Keep objects available everywhere in nodejs application
 
 [![npm version](https://img.shields.io/npm/v/kiper.svg?style=flat)](https://www.npmjs.com/package/kiper)
+[![Travis](https://travis-ci.org/vunb/kiper.svg?branch=master)](https://travis-ci.org/vunb/kiper)
 
 How to use
 ==========
