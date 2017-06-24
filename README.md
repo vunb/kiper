@@ -100,7 +100,7 @@ Method: `.touch(key)`
 -------------------------------
 
 > Repair the last time usage  
-> Added in: `v0.1.1`  
+> Added in: `v1.0.0`  
 
 ```js
 kiper.touch('foo');
@@ -109,19 +109,52 @@ kiper.touch('foo');
 Method: `.watch(key, callback)`
 -------------------------------
 
-> Watch a key, if its value changes then a callback will be called
-> Added in: `v0.1.1`  
+> Watch a key, if its value changes then a callback will be called  
+> Added in: `v1.0.0`  
 
 ```js
-// keep an asset
-kiper.keep('baz', {
+// keep an asset and return an obserable object 
+let baz = kiper.keep('baz', {
     gold: 1000
 });
 
-// watch a key and return an obserable object 
-let baz = kiper.watch('baz', (obj, oldVal, prop, type) => {
-    console.log('change info:', obj, oldVal, prop, type);
+// watch the key
+kiper.watch('baz', (obj, oldVal, propkey, type) => {
+    console.log('change info:', obj, oldVal, propkey, type);
 });
+
+// baz lost one gold
+baz.gold = 999
+// baz has new silvers
+baz.silver = 1000
+// baz lost all golds
+delete baz.gold
+```
+
+Method: `.on(event, listener)`
+-------------------------------
+
+> Listen an event which emit from kiper  
+> Added in: `v1.0.0`  
+
+```js
+kiper.keep('foo', 'bar', 1000);
+kiper.on('expired', (value, key) => {
+    console.log('A timeout on key has expired', value, key);
+})
+```
+
+Method: `.once(event, listener)`
+-------------------------------
+
+> Listen an event once which emit from kiper  
+> Added in: `v1.0.0`  
+
+```js
+kiper.keep('foo', 'bar', 1000);
+kiper.once('expired', (value, key) => {
+    console.log('A timeout on key has expired', value, key);
+})
 ```
 
 License
