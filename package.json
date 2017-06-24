@@ -1,10 +1,11 @@
 {
   "name": "kiper",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Keep objects available everywhere in nodejs application",
   "main": "index.js",
   "scripts": {
-    "test": "node test/start.js | tap-spec"
+    "test": "node test/start.js | tap-spec",
+    "debug": "node --nolazy --debug-brk=5858 debug.js"
   },
   "repository": {
     "type": "git",

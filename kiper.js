@@ -3,7 +3,7 @@ const events = require('events');
 /**
  * Kiper: Keep objects available everywhere in nodejs application
  */
-class Kiper extends events {
+class Kiper extends events.EventEmitter {
     constructor(options) {
         super();
         this._store = new Map();
@@ -21,14 +21,25 @@ class Kiper extends events {
         // override default
         this.options = Object.assign(this.options, options);
 
+        // bind has method into kiper
+        this.has = this._store.has.bind(this._store);
+
+        var self = this;
         if (this.options.checkPeriod > 0) {
             this._timer = setInterval(() => {
-                for (let [name, obj] of this._helper) {
+                for (let [name, obj] of self._helper) {
                     this._check(obj);
                 }
             }, this.options.checkPeriod);
         }
 
+        this.on('newListener', (event, listener) => {
+            console.log('new event added: ', event);
+        });
+
+        this.on('removeListener', (event, listener) => {
+            console.log('an event removed: ', event);
+        });
     }
 
     _check(obj, cb) {
@@ -40,10 +51,71 @@ class Kiper extends events {
 
         if (obj.ttl > 0 && Date.now() - lastTime > obj.ttl) {
             let value = this.remove(obj.key);
-            this._helper.delete(obj.key);
             this.emit('expired', value, obj.key, obj);
             obj.cb(value, obj.key, obj);
         }
+    }
+
+    _observe(obj, cb) {
+        if (Object(obj) !== obj) {
+            throw new TypeError('target must be an Object, given ' + obj);
+        }
+
+        if (typeof cb !== 'function') {
+            throw 'observer must be a function, given ' + cb;
+        }
+
+        var self = this;
+        return new Proxy(obj, {
+            get(target, propkey, receiver) {
+                if (typeof propkey === 'string' && /toObject/.test(propkey)) {
+                    return () => target['$isWrapped'] ? target.value : target;
+                } else {
+                    return target[propkey];
+                }
+            },
+            set(target, propkey, value, receiver) {
+                let oldVal = target[propkey];
+
+                // do not send anything if value did not change.
+                if (oldVal === value) return;
+
+                // define change type;
+                let type = oldVal === undefined ? 'add' : 'update';
+
+                let loginfo = {
+                    object: target,
+                    oldValue: oldVal,
+                    propkey: propkey,
+                    type: type,
+                };
+
+
+                // set prop value on target
+                target[propkey] = value;
+                cb(loginfo);
+                // must return true, see: https://goo.gl/KuR8QW
+                return true;
+            },
+
+            deleteProperty(target, propkey, receiver) {
+                // do not send change if prop does not exist.
+                if (!(propkey in target)) return;
+
+                let loginfo = {
+                    object: target,
+                    oldValue: target[propkey],
+                    propkey: propkey,
+                    type: 'delete'
+                };
+
+                // remove property.
+                delete target[propkey];
+                cb(loginfo);
+                return true;
+            }
+        });
+
     }
 
     /**
@@ -52,13 +124,19 @@ class Kiper extends events {
      */
     get(key) {
         if (typeof key === 'function') {
-            for (let [name, value] of this._store.entries()) {
-                if (key(value, name)) {
-                    return value;   
+            for (let [name, value] of this._store) {
+                let rawValue = value['$isWrapped'] ? value.value : target
+                if (key(rawValue, name)) {
+                    this.touch(name);
+                    return rawValue;
                 }
             }
+        } else if (this.has(key)) {
+            let value = this._store.get(key);
+            this.touch(key);
+            return value['$isWrapped'] ? value.value : value;
         } else {
-            return this._store.get(key);
+            return undefined;
         }
     }
 
@@ -72,7 +150,7 @@ class Kiper extends events {
             throw new TypeError('Key starts with prefix: __kiper__');
         }
         // its okay
-        this._store.set(key, value);
+        this.keep.apply(this, arguments);
     }
 
     /**
@@ -81,18 +159,30 @@ class Kiper extends events {
      * @param {object} value 
      */
     keep(key, value, ttl, cb) {
-        let timeout;
-        if (!ttl) {
-            this._store.set(key, value);
-        } else if (typeof ttl === 'number' && ttl > 0) {
-            this._store.set(key, value);
-            this._helper.set(key, {
-                ttl: ttl,
-                key: key,
-                cb: cb || (() => 1),
-                lastUsage: Date.now()
-            });
-        }
+        let wrapper = (() => {
+            if (typeof value !== 'object') {
+                return {
+                    $isWrapped: true,
+                    value: value
+                }
+            } else {
+                return value;
+            }
+        })();
+
+        let observable = this._observe(wrapper, (log) => {
+            this.emit(key, log.object, log.oldValue, log.propkey, log.type);
+        });
+
+        this.remove(key);
+        this._store.set(key, observable);
+        this._helper.set(key, {
+            ttl: ttl,
+            key: key,
+            cb: cb || (() => 1),
+            lastUsage: Date.now()
+        });
+        return observable;
     }
 
     /**
@@ -100,8 +190,9 @@ class Kiper extends events {
      * @param {string} key 
      */
     remove(key) {
-        let item = this.get(key);
+        let item = this.has(key) && this.get(key);
         this._store.delete(key);
+        this._helper.delete(key);
         return item;
     }
 
@@ -112,6 +203,27 @@ class Kiper extends events {
         clearInterval(this._timer);
         this._store.clear();
         this._helper.clear();
+    }
+
+    /**
+     * Repair the last time usage
+     * @param {*} key 
+     */
+    touch(key) {
+        if (this._helper.has(key)) {
+            this._helper.get(key).lastUsage = Date.now();
+        }
+    }
+
+    /**
+     * Observe value of key
+     * @param {*} key 
+     * @param {function} cb callback when value of key is changed
+     */
+    watch(key, cb) {
+        if (this.has(key)) {
+            this.on(key, cb);
+        }
     }
 }
 
