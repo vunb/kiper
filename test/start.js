@@ -12,7 +12,7 @@ test('Keep a simple value', (t) => {
     });
 
     // kiper should has its items
-    t.equal(kiper.get('foo'), 'bar');
+    t.equal(kiper.get('foo'), 'bar', 'get a non-object value');
     t.equal(typeof kiper.get('baz'), 'object', 'keep an object in kiper');
 });
 
@@ -49,40 +49,53 @@ test('Should emit an event expired on key', (t) => {
         t.pass('callback at timeout');
     });
 
-    kiper.on('expired', (value, key) => {
+    kiper.once('expired', (value, key) => {
         t.pass('got event expired on key');
     })
 });
 
+
+test('Should repair a key once time', (t) => {
+    t.plan(1);
+
+    let start = Date.now();
+    kiper.keep('baz', 100, 1000, (value, key) => {
+        let longtime = Date.now() - start;
+        t.ok(longtime > 1500 && longtime < 2001, 'baz has repaired for once time');
+    });
+
+    setTimeout(() => kiper.touch('baz'), 500);
+});
+
 test('Observe an object and notify on value of the item is changed', (t) => {
-    t.plan(6);
+    t.plan(5);
 
     // check 2 times
-    t.throws(() => kiper._observe('fake', 123, console.log), /TypeError/, 'Should throw typeError if not pass an object');
-    t.throws(() => kiper._observe('fake', {}), /function/,'Should throw an error if missing a callback');
+    t.throws(() => kiper._observe(123, console.log), /TypeError/, 'Should throw typeError if not pass an object');
+    t.throws(() => kiper._observe({}), /function/,'Should throw an error if missing a callback');
 
-    // keep an asset
-    kiper.keep('baz', {
+    // keep an asset here
+    let baz = kiper.keep('baz', {
         gold: 1000
     });
 
-    let baz = kiper.watch('baz', (obj, oldVal, prop, type) => {
+    kiper.watch('baz', (obj, oldVal, propkey, type) => {
         if (type === 'update') {
-            t.equal(obj[prop] - oldVal, -1, 'lost one gold!');
+            t.equal(obj[propkey] - oldVal, -1, 'lost one gold!');
         } else if (type === 'add') {
             t.equal(obj['silver'], 1000, 'new prop should be added');
         } else if (type === 'delete') {
-            t.notOk(obj['baz'], 'baz should be undefined after delete');
+            t.equal(typeof obj['gold'], 'undefined', 'baz should be undefined after delete');
+        } else {
+            t.fail('do not know change type:', obj, oldVal, propkey, type);
         }
     });
 
-    // change value in somewhere
-    // check 3 times
+    // check 3 times: change value in somewhere
     setTimeout(() => baz.gold = 999, 1000);
     setTimeout(() => delete baz.gold, 1000);
     setTimeout(() => baz.silver = 1000, 1000);
 
-    t.ok(kiper.get('baz').silver, 'baz has silver its own');
 });
 
 test('Kiper retire', (t) => {
