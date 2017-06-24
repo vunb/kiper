@@ -3,7 +3,7 @@ const events = require('events');
 /**
  * Kiper: Keep objects available everywhere in nodejs application
  */
-class Kiper extends events {
+class Kiper extends events.EventEmitter {
     constructor(options) {
         super();
         this._store = new Map();
@@ -33,6 +33,13 @@ class Kiper extends events {
             }, this.options.checkPeriod);
         }
 
+        this.on('newListener', (event, listener) => {
+            console.log('new event added: ', event);
+        });
+
+        this.on('removeListener', (event, listener) => {
+            console.log('an event removed: ', event);
+        });
     }
 
     _check(obj, cb) {
@@ -49,7 +56,7 @@ class Kiper extends events {
         }
     }
 
-    _observe(key, obj, cb) {
+    _observe(obj, cb) {
         if (Object(obj) !== obj) {
             throw new TypeError('target must be an Object, given ' + obj);
         }
@@ -60,8 +67,15 @@ class Kiper extends events {
 
         var self = this;
         return new Proxy(obj, {
-            set(target, prop, value, receiver) {
-                let oldVal = target[prop];
+            get(target, propkey, receiver) {
+                if (typeof propkey === 'string' && /toObject/.test(propkey)) {
+                    return () => target['$isWrapped'] ? target.value : target;
+                } else {
+                    return target[propkey];
+                }
+            },
+            set(target, propkey, value, receiver) {
+                let oldVal = target[propkey];
 
                 // do not send anything if value did not change.
                 if (oldVal === value) return;
@@ -69,37 +83,35 @@ class Kiper extends events {
                 // define change type;
                 let type = oldVal === undefined ? 'add' : 'update';
 
-                let info = {
+                let loginfo = {
                     object: target,
                     oldValue: oldVal,
-                    name: prop,
+                    propkey: propkey,
                     type: type,
                 };
 
 
                 // set prop value on target
-                target[prop] = value;
-                self.keep(key, target);
-                cb(info.object, info.oldValue, info.name, info.type);
+                target[propkey] = value;
+                cb(loginfo);
                 // must return true, see: https://goo.gl/KuR8QW
                 return true;
             },
 
-            deleteProperty(target, prop, receiver) {
+            deleteProperty(target, propkey, receiver) {
                 // do not send change if prop does not exist.
-                if (!(prop in target)) return;
+                if (!(propkey in target)) return;
 
-                let info = {
+                let loginfo = {
                     object: target,
-                    oldValue: target[prop],
-                    name: prop,
+                    oldValue: target[propkey],
+                    propkey: propkey,
                     type: 'delete'
                 };
 
                 // remove property.
-                delete target[prop];
-                self.keep(key, target);
-                cb(info.object, info.oldValue, info.name, info.type);
+                delete target[propkey];
+                cb(loginfo);
                 return true;
             }
         });
@@ -113,14 +125,16 @@ class Kiper extends events {
     get(key) {
         if (typeof key === 'function') {
             for (let [name, value] of this._store) {
-                if (key(value, name)) {
+                let rawValue = value['$isWrapped'] ? value.value : target
+                if (key(rawValue, name)) {
                     this.touch(name);
-                    return value;
+                    return rawValue;
                 }
             }
         } else if (this.has(key)) {
+            let value = this._store.get(key);
             this.touch(key);
-            return this._store.get(key);
+            return value['$isWrapped'] ? value.value : value;
         } else {
             return undefined;
         }
@@ -145,14 +159,30 @@ class Kiper extends events {
      * @param {object} value 
      */
     keep(key, value, ttl, cb) {
+        let wrapper = (() => {
+            if (typeof value !== 'object') {
+                return {
+                    $isWrapped: true,
+                    value: value
+                }
+            } else {
+                return value;
+            }
+        })();
+
+        let observable = this._observe(wrapper, (log) => {
+            this.emit(key, log.object, log.oldValue, log.propkey, log.type);
+        });
+
         this.remove(key);
-        this._store.set(key, value);
+        this._store.set(key, observable);
         this._helper.set(key, {
             ttl: ttl,
             key: key,
             cb: cb || (() => 1),
             lastUsage: Date.now()
         });
+        return observable;
     }
 
     /**
@@ -191,8 +221,9 @@ class Kiper extends events {
      * @param {function} cb callback when value of key is changed
      */
     watch(key, cb) {
-        let value = this.get(key);
-        return this._observe(key, value, cb);
+        if (this.has(key)) {
+            this.on(key, cb);
+        }
     }
 }
 
