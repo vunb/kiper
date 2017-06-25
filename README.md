@@ -47,10 +47,14 @@ Usecases
 API Usage
 =========
 
-Class: Kiper
+Class: Kiper(options)
 =======================
-> The `Kiper` class is defined and exposed by the module `kiper`:
-> Added in: `v0.0.1`
+> The `Kiper` class is defined and exposed by the module `kiper`  
+> Added in: `v0.0.1`  
+> Options: 
+> * **ttl**: (default: 0) - time to live in milliseconds. 0 = infinity
+> * **checkPeriod**: (default: 600) - duration to check timeout on key has expired.
+> * **checkUsage**: (default: true) - check the last time usage
 
 ```js
 // create new instance of Kiper
