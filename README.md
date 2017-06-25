@@ -27,8 +27,35 @@ console.log(value);
 
 ```
 
+Main features
+=============
+
+* Keep objects and cache them in memory
+* Keep an object with a timeout (TTL - time to live)
+* Observe key if its value has any changed
+* Add/listen a custom event
+
+Usecases
+========
+
+* Cache object
+* Observing the changes to an object
+* Send and receive messages through events
+* Create agents and manage them. Such as: `Chatbot manager`, `Dialog manager`, ...
+* Etc, ...
+
 API Usage
 =========
+
+Class: Kiper
+=======================
+> The `Kiper` class is defined and exposed by the module `kiper`:
+> Added in: `v0.0.1`
+
+```js
+// create new instance of Kiper
+const kiper = require('kiper').Kiper(options);
+```
 
 Method: `.keep(key: string, value: object)`
 -------------------------------
@@ -121,6 +148,9 @@ let baz = kiper.keep('baz', {
 // watch the key
 kiper.watch('baz', (obj, oldVal, propkey, type) => {
     console.log('change info:', obj, oldVal, propkey, type);
+    // change info: { gold: 999 } 1000 gold update
+    // change info: { silver: 1000 } undefined silver add
+    // change info: {} 999 gold delete
 });
 
 // baz lost one gold
@@ -141,6 +171,7 @@ Method: `.on(event, listener)`
 kiper.keep('foo', 'bar', 1000);
 kiper.on('expired', (value, key) => {
     console.log('A timeout on key has expired', value, key);
+    // A timeout on key has expired bar foo
 })
 ```
 
@@ -154,6 +185,7 @@ Method: `.once(event, listener)`
 kiper.keep('foo', 'bar', 1000);
 kiper.once('expired', (value, key) => {
     console.log('A timeout on key has expired', value, key);
+    // A timeout on key has expired bar foo
 })
 ```
 
