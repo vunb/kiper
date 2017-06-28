@@ -49,7 +49,8 @@ API Usage
 
 Class: Kiper(options)
 =======================
-> The `Kiper` class is defined and exposed by the module `kiper`  
+
+> The class is defined and exposed by the module `kiper`  
 > Added in: `v0.0.1`  
 > Options: 
 > * **ttl**: (default: 0) - time to live in milliseconds. 0 = infinity
@@ -61,7 +62,7 @@ Class: Kiper(options)
 const kiper = require('kiper').Kiper(options);
 ```
 
-Method: `.keep(key: string, value: object)`
+Method: '.keep(key: string, value: object)'
 -------------------------------
 
 > Keep an object in kiper  
@@ -72,7 +73,7 @@ Method: `.keep(key: string, value: object)`
 kiper.keep('foo', 'bar');
 ```
 
-Method: `.keep(key: string, value: object, ttl: int, timeout: function)`
+Method: '.keep(key: string, value: object [, ttl: int, timeout: function])'
 -------------------------------
 
 > Keep an object for a period of time  
@@ -84,7 +85,7 @@ kiper.keep('foo', 'bar', 1000, console.log);
 // output: bar foor
 ```
 
-Method: `.get(key: string)`
+Method: '.get(key: string)'
 -------------------------------
 
 > Get an object from kiper  
@@ -95,7 +96,7 @@ kiper.get('foo');
 // returns: bar
 ```
 
-Method: `.get(validator: function)`
+Method: '.get(validator: function)'
 -------------------------------
 
 > Get an object from kiper by pass a validator function  
