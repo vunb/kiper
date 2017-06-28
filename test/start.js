@@ -98,6 +98,33 @@ test('Observe an object and notify on value of the item is changed', (t) => {
 
 });
 
+test('Deep observe an object and notify the value changed', (t) => {
+    t.plan(1);
+
+    let security = null;
+    let baz = kiper.keep('baz', {
+        gold: 1000,
+        owner: {
+            name: 'Bill Gate',
+            age: 61
+        }
+    });
+
+    kiper.watch('baz', true, (obj, oldval, propkey, type) => {
+        t.equal(obj.owner.name, 'robber', 'robber has gold');
+        clearTimeout(security);
+    });
+
+    // the owner has lost his gold
+    setTimeout(() => baz.owner.name = 'robber', 1000);
+
+    // turn on the security system
+    security = setTimeout(() => {
+        t.fail('kiper did not know about the robbery');
+    });
+
+});
+
 test('Kiper retire', (t) => {
     // stop testing
     kiper.retire();

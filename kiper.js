@@ -220,7 +220,11 @@ class Kiper extends events.EventEmitter {
      * @param {*} key 
      * @param {function} cb callback when value of key is changed
      */
-    watch(key, cb) {
+    watch(key, isdeep, cb) {
+        if (typeof isdeep === 'function') {
+            cb = isdeep;
+        }
+
         if (this.has(key)) {
             this.on(key, cb);
         }
