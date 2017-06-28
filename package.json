@@ -12,9 +12,11 @@
     "url": "git+https://github.com/vunb/kiper.git"
   },
   "keywords": [
+    "cache",
     "key-value-store",
     "map",
-    "nodejs"
+    "nodejs",
+    "observer"
   ],
   "author": "Vunb",
   "license": "MIT",
